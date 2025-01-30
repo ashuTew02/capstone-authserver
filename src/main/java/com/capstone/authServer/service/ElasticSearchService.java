@@ -51,13 +51,13 @@ public class ElasticSearchService {
     private BoolQuery buildBoolQuery(ScanToolType toolType, FindingSeverity severity, FindingState state) {
         return BoolQuery.of(b -> {
             if (toolType != null) {
-                b.must(m -> m.term(t -> t.field("toolType").value(toolType.name())));
+                b.must(m -> m.term(t -> t.field("toolType.keyword").value(toolType.name())));
             }
             if (severity != null) {
-                b.must(m -> m.term(t -> t.field("severity").value(severity.name())));
+                b.must(m -> m.term(t -> t.field("severity.keyword").value(severity.name())));
             }
             if (state != null) {
-                b.must(m -> m.term(t -> t.field("state").value(state.name())));
+                b.must(m -> m.term(t -> t.field("state.keyword").value(state.name())));
             }
             return b;
         });

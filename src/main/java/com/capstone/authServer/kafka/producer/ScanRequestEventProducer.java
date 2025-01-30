@@ -19,7 +19,7 @@ public class ScanRequestEventProducer {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void produce(ScanRequestEvent scanRequestEvent) {
+    public void produce(ScanRequestEvent scanRequestEvent) throws Exception {
         kafkaTemplate.send(scanRequestEventTopic, scanRequestEvent);
     }
 }
