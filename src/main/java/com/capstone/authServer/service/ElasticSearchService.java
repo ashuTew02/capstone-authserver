@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.capstone.authServer.dto.SearchResultDTO;
 import com.capstone.authServer.model.Finding;
 import com.capstone.authServer.model.FindingSeverity;
 import com.capstone.authServer.model.FindingState;
@@ -32,7 +33,7 @@ public class ElasticSearchService {
         }
     }
 
-    public List<Finding> searchFindings(ScanToolType toolType, FindingSeverity severity, FindingState state, int page, int size) {
+    public SearchResultDTO<Finding> searchFindings(ScanToolType toolType, FindingSeverity severity, FindingState state, int page, int size) {
         SearchResponse<Finding> response;
         try {
             response = esClient.search(s -> s
@@ -40,13 +41,33 @@ public class ElasticSearchService {
                     .query(q -> q.bool(buildBoolQuery(toolType, severity, state)))
                     .from(page * size)
                     .size(size),
-                    Finding.class);
+                    Finding.class
+            );
         } catch (Exception e) {
             e.printStackTrace();
-            return List.of();
+            return new SearchResultDTO<>(List.of(), 0, 0);
         }
-        return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
+
+        // Extract the list of findings
+        List<Finding> findings = response.hits()
+                .hits()
+                .stream()
+                .map(Hit::source)
+                .collect(Collectors.toList());
+
+        // Extract total hits from the response
+        // (This requires that Elasticsearch is returning an accurate total; 
+        // otherwise .relation() might be "gte" and you'd have to handle that logic if needed)
+        long totalHits = response.hits().total() != null
+                ? response.hits().total().value()
+                : 0;
+
+        // Calculate total pages
+        int totalPages = (int) Math.ceil((double) totalHits / size);
+
+        return new SearchResultDTO<>(findings, totalHits, totalPages);
     }
+
 
     private BoolQuery buildBoolQuery(ScanToolType toolType, FindingSeverity severity, FindingState state) {
         return BoolQuery.of(b -> {
