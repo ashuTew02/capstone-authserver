@@ -2,12 +2,19 @@ package com.capstone.authServer.dto.event;
 
 import java.util.List;
 
+import javax.validation.constraints.NotBlank;
+
 import com.capstone.authServer.model.ScanType;
 
 public class ScanRequestEvent {
 
+    @NotBlank(message = "owner must not be blank")
     private String owner;
+
+    @NotBlank(message = "repository must not be blank")
     private String repository;
+
+    // @NotEmpty(message = "scanTypes list must not be empty")
     private List<ScanType> scanTypes;
 
     public ScanRequestEvent() {
@@ -19,6 +26,7 @@ public class ScanRequestEvent {
         this.scanTypes = scanTypes;
     }
 
+    // --- Getters and Setters ---
     public String getOwner() {
         return owner;
     }

@@ -1,18 +1,21 @@
 package com.capstone.authServer.controller;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import javax.validation.Valid;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.capstone.authServer.dto.event.ScanRequestEvent;
+import com.capstone.authServer.dto.response.ApiResponse;
 import com.capstone.authServer.kafka.producer.ScanRequestEventProducer;
 
-
 @RestController
+@CrossOrigin
 @RequestMapping("/scan")
 public class ScanController {
 
@@ -23,17 +26,13 @@ public class ScanController {
     }
 
     @PostMapping("/request")
-    public Map<String, Object> createScanRequest(@RequestBody ScanRequestEvent scanRequestEvent) {
-        Map<String, Object> response = new LinkedHashMap<>();
-        try{
-            producer.produce(scanRequestEvent);
-            response.put("status", "success");
-            response.put("message", "Scan Request Event published successfully!");
-        } catch (Exception e) {
-            e.printStackTrace();
-            response.put("status", "failure");
-            response.put("message", "Failed to publish Scan Request Event!");
-        }
-        return response;
+    public ResponseEntity<ApiResponse<?>> createScanRequest(@Valid @RequestBody ScanRequestEvent scanRequestEvent) {
+        // If validation fails, it will throw MethodArgumentNotValidException (handled in GlobalExceptionHandler).
+
+        producer.produce(scanRequestEvent);
+        return new ResponseEntity<>(
+            ApiResponse.success(HttpStatus.OK.value(), "Scan Request Event published successfully!", null),
+            HttpStatus.OK
+        );
     }
 }

@@ -1,6 +1,7 @@
 package com.capstone.authServer.dto;
 
 import java.util.List;
+import java.util.Map;
 
 import com.capstone.authServer.model.FindingSeverity;
 import com.capstone.authServer.model.FindingState;
@@ -27,6 +28,24 @@ public class FindingResponseDTO {
 
     private String componentName;
     private String componentVersion;
+
+    private String createdAt;
+
+    private Map<String, Object> toolAdditionalProperties;
+
+    public String getCreatedAt() {
+        return createdAt;
+    }
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
+    }
+    public String getUpdatedAt() {
+        return updatedAt;
+    }
+    public void setUpdatedAt(String updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+    private String updatedAt;
 
     // -- Getters and setters --
     public String getId() {
@@ -132,5 +151,13 @@ public class FindingResponseDTO {
     }
     public void setComponentVersion(String componentVersion) {
         this.componentVersion = componentVersion;
+    }
+
+    public Map<String, Object> getToolAdditionalProperties() {
+        return toolAdditionalProperties;
+    }
+
+    public void setToolAdditionalProperties(Map<String, Object> toolAdditionalProperties) {
+        this.toolAdditionalProperties = toolAdditionalProperties;
     }
 }

@@ -6,13 +6,14 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.capstone.authServer.dto.SearchResultDTO;
+import com.capstone.authServer.exception.ElasticsearchOperationException;
 import com.capstone.authServer.model.Finding;
 import com.capstone.authServer.model.FindingSeverity;
 import com.capstone.authServer.model.FindingState;
 import com.capstone.authServer.model.ScanToolType;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 
@@ -29,58 +30,83 @@ public class ElasticSearchService {
         try {
             esClient.index(i -> i.index("findings").id(finding.getId()).document(finding));
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new ElasticsearchOperationException("Error saving finding to Elasticsearch.", e);
         }
     }
 
-    public SearchResultDTO<Finding> searchFindings(ScanToolType toolType, FindingSeverity severity, FindingState state, int page, int size) {
-        SearchResponse<Finding> response;
+    public SearchResultDTO<Finding> searchFindings(ScanToolType toolType,
+                                                   FindingSeverity severity,
+                                                   FindingState state,
+                                                   int page,
+                                                   int size) {
         try {
-            response = esClient.search(s -> s
+            // Use the builder to construct the query in a more readable manner
+            var boolQuery = new FindingSearchQueryBuilder()
+                                .withToolType(toolType)
+                                .withSeverity(severity)
+                                .withState(state)
+                                .build();
+                                SearchResponse<Finding> response = esClient.search(s -> s
+                                .index("findings")
+                                .query(q -> q.bool(boolQuery))
+                                .sort(sort -> sort
+                                    .field(f -> f
+                                        // Use the appropriate field name based on your mapping
+                                        .field("updatedAt")
+                                        .order(SortOrder.Desc)
+                                    )
+                                )
+                                .from(page * size)
+                                .size(size),
+                                Finding.class
+                        );
+            List<Finding> findings = response.hits()
+                    .hits()
+                    .stream()
+                    .map(Hit::source)
+                    .collect(Collectors.toList());
+
+
+            long totalHits = response.hits().total() != null ? response.hits().total().value() : 0;
+            int totalPages = (int) Math.ceil((double) totalHits / size);
+
+            return new SearchResultDTO<>(findings, totalHits, totalPages);
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            throw new ElasticsearchOperationException("Error searching findings in Elasticsearch.", e);
+        }
+    }
+
+    public Finding getFindingById(String id) {
+
+        try {
+            var boolQuery = new FindingSearchQueryBuilder().withId(id).build();
+
+            SearchResponse<Finding> response = esClient.search(s -> s
                     .index("findings")
-                    .query(q -> q.bool(buildBoolQuery(toolType, severity, state)))
-                    .from(page * size)
-                    .size(size),
+                    .query(q -> q.bool(boolQuery))
+                    .size(1),
                     Finding.class
             );
+
+            List<Finding> findings = response.hits()
+                    .hits()
+                    .stream()
+                    .map(Hit::source)
+                    .collect(Collectors.toList());
+
+            if (findings.isEmpty()) {
+                return null;
+            } else {
+                return findings.get(0);
+            }
         } catch (Exception e) {
-            e.printStackTrace();
-            return new SearchResultDTO<>(List.of(), 0, 0);
+            throw new ElasticsearchOperationException("Can't find the given finding.", e);
         }
-
-        // Extract the list of findings
-        List<Finding> findings = response.hits()
-                .hits()
-                .stream()
-                .map(Hit::source)
-                .collect(Collectors.toList());
-
-        // Extract total hits from the response
-        // (This requires that Elasticsearch is returning an accurate total; 
-        // otherwise .relation() might be "gte" and you'd have to handle that logic if needed)
-        long totalHits = response.hits().total() != null
-                ? response.hits().total().value()
-                : 0;
-
-        // Calculate total pages
-        int totalPages = (int) Math.ceil((double) totalHits / size);
-
-        return new SearchResultDTO<>(findings, totalHits, totalPages);
+    
     }
+    
 
 
-    private BoolQuery buildBoolQuery(ScanToolType toolType, FindingSeverity severity, FindingState state) {
-        return BoolQuery.of(b -> {
-            if (toolType != null) {
-                b.must(m -> m.term(t -> t.field("toolType.keyword").value(toolType.name())));
-            }
-            if (severity != null) {
-                b.must(m -> m.term(t -> t.field("severity.keyword").value(severity.name())));
-            }
-            if (state != null) {
-                b.must(m -> m.term(t -> t.field("state.keyword").value(state.name())));
-            }
-            return b;
-        });
-    }
 }

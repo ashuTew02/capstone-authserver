@@ -22,6 +22,9 @@ public class FindingToFindingResponseDTO {
         dto.setComponentName(finding.getComponentName());
         dto.setComponentVersion(finding.getComponentVersion());
 
+        dto.setCreatedAt(finding.getCreatedAt());
+        dto.setUpdatedAt(finding.getUpdatedAt());
+        dto.setToolAdditionalProperties(finding.getToolAdditionalProperties());
         return dto;
     }
 }
