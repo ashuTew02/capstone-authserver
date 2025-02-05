@@ -1,10 +1,15 @@
 package com.capstone.authServer.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.capstone.authServer.model.FindingSeverity;
 import com.capstone.authServer.model.FindingState;
 import com.capstone.authServer.model.ScanToolType;
 
+import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.TermsQueryField;
 
 public class FindingSearchQueryBuilder {
 
@@ -14,34 +19,78 @@ public class FindingSearchQueryBuilder {
         this.builder = new BoolQuery.Builder();
     }
 
-    public FindingSearchQueryBuilder withToolType(ScanToolType toolType) {
-        if (toolType != null) {
-            builder.must(m -> m.term(t -> t.field("toolType.keyword").value(toolType.name())));
+    /**
+     * Filter by a list of toolTypes (OR logic within this list).
+     */
+    public FindingSearchQueryBuilder withToolTypes(List<ScanToolType> toolTypes) {
+        if (toolTypes != null && !toolTypes.isEmpty()) {
+            // Convert each enum to a FieldValue
+            List<FieldValue> fieldValues = toolTypes.stream()
+                .map(Enum::name)
+                .map(FieldValue::of)
+                .collect(Collectors.toList());
+            
+            // Use a terms query on the "toolType.keyword" field
+            builder.must(m -> m.terms(tq -> tq
+                .field("toolType.keyword")
+                .terms(TermsQueryField.of(tf -> tf.value(fieldValues)))
+            ));
         }
         return this;
     }
 
-    public FindingSearchQueryBuilder withSeverity(FindingSeverity severity) {
-        if (severity != null) {
-            builder.must(m -> m.term(t -> t.field("severity.keyword").value(severity.name())));
+    /**
+     * Filter by a list of severities.
+     */
+    public FindingSearchQueryBuilder withSeverities(List<FindingSeverity> severities) {
+        if (severities != null && !severities.isEmpty()) {
+            List<FieldValue> fieldValues = severities.stream()
+                .map(Enum::name)
+                .map(FieldValue::of)
+                .collect(Collectors.toList());
+            
+            builder.must(m -> m.terms(tq -> tq
+                .field("severity.keyword")
+                .terms(TermsQueryField.of(tf -> tf.value(fieldValues)))
+            ));
         }
         return this;
     }
 
-    public FindingSearchQueryBuilder withState(FindingState state) {
-        if (state != null) {
-            builder.must(m -> m.term(t -> t.field("state.keyword").value(state.name())));
+    /**
+     * Filter by a list of states.
+     */
+    public FindingSearchQueryBuilder withStates(List<FindingState> states) {
+        if (states != null && !states.isEmpty()) {
+            List<FieldValue> fieldValues = states.stream()
+                .map(Enum::name)
+                .map(FieldValue::of)
+                .collect(Collectors.toList());
+            
+            builder.must(m -> m.terms(tq -> tq
+                .field("state.keyword")
+                .terms(TermsQueryField.of(tf -> tf.value(fieldValues)))
+            ));
         }
         return this;
     }
 
+    /**
+     * Filter by a single ID (exact match).
+     */
     public FindingSearchQueryBuilder withId(String id) {
         if (id != null) {
-            builder.must(m -> m.term(t -> t.field("id.keyword").value(id)));
+            builder.must(m -> m.term(t -> t
+                .field("id.keyword")
+                .value(id)
+            ));
         }
         return this;
     }
 
+    /**
+     * Build the final BoolQuery.
+     */
     public BoolQuery build() {
         return builder.build();
     }

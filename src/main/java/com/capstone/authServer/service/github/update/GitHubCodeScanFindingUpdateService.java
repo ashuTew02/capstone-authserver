@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -18,7 +19,9 @@ import reactor.core.publisher.Mono;
 @Service
 public class GitHubCodeScanFindingUpdateService implements GitHubFindingUpdateService {
 
-    private static final String PERSONAL_ACCESS_TOKEN = "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";
+    @Value("${github.pat}")
+    private String PERSONAL_ACCESS_TOKEN;
+    
     private final WebClient webClient;
     private final GitHubStateMapper<GithubCodeScanState, GithubCodeScanDismissedReason> codeScanMapper;
 
