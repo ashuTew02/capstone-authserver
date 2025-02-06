@@ -8,6 +8,15 @@ public class UpdateAlertRequest {
     private ScanToolType tool;
     private Long alertNumber;
     private FindingState findingState;
+    private String id;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public ScanToolType getTool() {
         return tool;

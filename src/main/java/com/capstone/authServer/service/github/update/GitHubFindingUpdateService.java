@@ -5,5 +5,5 @@ import com.capstone.authServer.model.ScanToolType;
 
 public interface GitHubFindingUpdateService {
     ScanToolType getToolType();
-    void updateFinding(String owner, String repo, Long alertNumber, FindingState findingState);
+    void updateFinding(String owner, String repo, Long alertNumber, FindingState findingState, String id);
 }

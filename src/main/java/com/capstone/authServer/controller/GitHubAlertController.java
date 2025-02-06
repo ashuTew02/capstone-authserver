@@ -47,8 +47,7 @@ public class GitHubAlertController {
         String repo = "juice-shop";
 
         // 3) Call the update logic
-        service.updateFinding(owner, repo, request.getAlertNumber(), request.getFindingState());
-
+        service.updateFinding(owner, repo, request.getAlertNumber(), request.getFindingState(), request.getId());
         // 4) Return a response, same pattern as other endpoints
         return new ResponseEntity<>(
             ApiResponse.success(

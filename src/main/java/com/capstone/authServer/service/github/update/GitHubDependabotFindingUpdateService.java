@@ -12,6 +12,7 @@ import com.capstone.authServer.model.FindingState;
 import com.capstone.authServer.model.ScanToolType;
 import com.capstone.authServer.model.github.dismissedreason.GithubDependabotDismissedReason;
 import com.capstone.authServer.model.github.state.GithubDependabotState;
+import com.capstone.authServer.service.ElasticSearchService;
 import com.capstone.authServer.service.mapper.state.GitHubStateMapper;
 
 import reactor.core.publisher.Mono;
@@ -24,15 +25,19 @@ public class GitHubDependabotFindingUpdateService implements GitHubFindingUpdate
 
     private final WebClient webClient;
     private final GitHubStateMapper<GithubDependabotState, GithubDependabotDismissedReason> dependabotMapper;
+    private final ElasticSearchService esService;
+
 
     public GitHubDependabotFindingUpdateService(
             WebClient.Builder webClientBuilder,
-            GitHubStateMapper<GithubDependabotState, GithubDependabotDismissedReason> dependabotMapper) {
+            GitHubStateMapper<GithubDependabotState, GithubDependabotDismissedReason> dependabotMapper,
+            ElasticSearchService esService) {
 
         this.webClient = webClientBuilder
             .baseUrl("https://api.github.com")
             .build();
         this.dependabotMapper = dependabotMapper;
+        this.esService = esService;
     }
 
     @Override
@@ -41,7 +46,7 @@ public class GitHubDependabotFindingUpdateService implements GitHubFindingUpdate
     }
 
     @Override
-    public void updateFinding(String owner, String repo, Long alertNumber, FindingState findingState) {
+    public void updateFinding(String owner, String repo, Long alertNumber, FindingState findingState, String id) {
         // 1) Map to GitHub state/dismissedReason
         GithubDependabotState state = dependabotMapper.mapState(findingState);
         Optional<GithubDependabotDismissedReason> dismissedReasonOpt =
@@ -67,5 +72,7 @@ public class GitHubDependabotFindingUpdateService implements GitHubFindingUpdate
             )
             .bodyToMono(Void.class)
             .block();
+
+        esService.updateFindingStateByFindingId(id, findingState);
     }
 }

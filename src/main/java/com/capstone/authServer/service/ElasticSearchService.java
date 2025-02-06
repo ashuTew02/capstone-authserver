@@ -2,6 +2,8 @@ package com.capstone.authServer.service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch.core.IndexRequest;
+import co.elastic.clients.elasticsearch.core.IndexResponse;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.capstone.authServer.dto.SearchResultDTO;
@@ -12,6 +14,7 @@ import com.capstone.authServer.model.FindingState;
 import com.capstone.authServer.model.ScanToolType;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -110,6 +113,26 @@ public class ElasticSearchService {
             }
         } catch (Exception e) {
             throw new ElasticsearchOperationException("Can't find the given finding.", e);
+        }
+    }
+
+    public void updateFindingStateByFindingId(String id, FindingState state) {
+        try {
+            Finding finding = getFindingById(id);
+            finding.setState(state);
+            finding.setUpdatedAt(LocalDateTime.now().toString());
+            IndexRequest<Finding> request = IndexRequest.of(builder ->
+                builder.index("findings")
+                    .id(finding.getId())
+                    .document(finding)
+            );
+
+            IndexResponse response = esClient.index(request);
+            System.out.println("Updated " + finding.getToolType() 
+                                   + " job in ES findings index with _id: " 
+                                   + response.id());
+        } catch (Exception e) {
+            throw new ElasticsearchOperationException("Error updating finding state in Elasticsearch.", e);
         }
     }
 }

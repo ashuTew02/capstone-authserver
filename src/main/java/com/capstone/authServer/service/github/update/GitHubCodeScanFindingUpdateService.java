@@ -12,6 +12,7 @@ import com.capstone.authServer.model.FindingState;
 import com.capstone.authServer.model.ScanToolType;
 import com.capstone.authServer.model.github.dismissedreason.GithubCodeScanDismissedReason;
 import com.capstone.authServer.model.github.state.GithubCodeScanState;
+import com.capstone.authServer.service.ElasticSearchService;
 import com.capstone.authServer.service.mapper.state.GitHubStateMapper;
 
 import reactor.core.publisher.Mono;
@@ -24,15 +25,18 @@ public class GitHubCodeScanFindingUpdateService implements GitHubFindingUpdateSe
     
     private final WebClient webClient;
     private final GitHubStateMapper<GithubCodeScanState, GithubCodeScanDismissedReason> codeScanMapper;
+    private final ElasticSearchService esService;
 
     public GitHubCodeScanFindingUpdateService(
             WebClient.Builder webClientBuilder,
-            GitHubStateMapper<GithubCodeScanState, GithubCodeScanDismissedReason> codeScanMapper) {
+            GitHubStateMapper<GithubCodeScanState, GithubCodeScanDismissedReason> codeScanMapper,
+            ElasticSearchService esService) {
 
         this.webClient = webClientBuilder
             .baseUrl("https://api.github.com")
             .build();
         this.codeScanMapper = codeScanMapper;
+        this.esService = esService;
     }
 
     @Override
@@ -41,7 +45,7 @@ public class GitHubCodeScanFindingUpdateService implements GitHubFindingUpdateSe
     }
 
     @Override
-    public void updateFinding(String owner, String repo, Long alertNumber, FindingState findingState) {
+    public void updateFinding(String owner, String repo, Long alertNumber, FindingState findingState, String id) {
         // 1) Map to GitHub state/dismissedReason
         GithubCodeScanState state = codeScanMapper.mapState(findingState);
         Optional<GithubCodeScanDismissedReason> dismissedReasonOpt = codeScanMapper.mapDismissedReason(findingState);
@@ -66,5 +70,7 @@ public class GitHubCodeScanFindingUpdateService implements GitHubFindingUpdateSe
             )
             .bodyToMono(Void.class)
             .block();
+
+        esService.updateFindingStateByFindingId(id, findingState);
     }
 }
