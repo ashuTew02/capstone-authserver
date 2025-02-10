@@ -7,6 +7,7 @@ import com.capstone.authServer.model.Finding;
 import com.capstone.authServer.model.FindingSeverity;
 import com.capstone.authServer.model.FindingState;
 import com.capstone.authServer.model.ScanToolType;
+import com.capstone.authServer.security.annotation.AllowedRoles;
 import com.capstone.authServer.service.ElasticSearchService;
 import com.capstone.authServer.utils.FindingToFindingResponseDTO;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @CrossOrigin
+
 public class FindingController {
 
     private final ElasticSearchService service;
@@ -27,6 +29,7 @@ public class FindingController {
     }
 
     @GetMapping("/findings")
+    @AllowedRoles({"USER", "ADMIN","SUPER_ADMIN"})
     public ResponseEntity<ApiResponse<?>> getFindings(
             // Changed each of these to List<T> to allow multiple
             @RequestParam(required = false) List<ScanToolType> toolType,
@@ -72,6 +75,7 @@ public class FindingController {
     }
 
     @GetMapping("finding")
+    @AllowedRoles({"USER", "ADMIN","SUPER_ADMIN"})
     public ResponseEntity<ApiResponse<?>> getFindingById(@RequestParam String id) {
         Finding finding = service.getFindingById(id);
         FindingResponseDTO dto = FindingToFindingResponseDTO.convert(finding);

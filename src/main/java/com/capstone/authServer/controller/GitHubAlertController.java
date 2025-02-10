@@ -16,25 +16,27 @@ import org.springframework.web.bind.annotation.RestController;
 import com.capstone.authServer.dto.UpdateAlertRequest;
 import com.capstone.authServer.dto.response.ApiResponse;
 import com.capstone.authServer.model.ScanToolType;
+import com.capstone.authServer.security.annotation.AllowedRoles;
 import com.capstone.authServer.service.github.update.GitHubFindingUpdateService;
 
 @RestController
 @RequestMapping("/api/github")
 @CrossOrigin
 public class GitHubAlertController {
-
+    
     private final Map<ScanToolType, GitHubFindingUpdateService> serviceByTool;
-
+    
     public GitHubAlertController(List<GitHubFindingUpdateService> services) {
         // Build a map { CODE_SCAN -> codeScanService, DEPENDABOT -> depService, etc. }
         this.serviceByTool = services.stream()
-            .collect(Collectors.toMap(
-                GitHubFindingUpdateService::getToolType, 
-                Function.identity()
+        .collect(Collectors.toMap(
+            GitHubFindingUpdateService::getToolType, 
+            Function.identity()
             ));
-    }
-
+        }
+        
     @PatchMapping("/alert")
+    @AllowedRoles({"SUPER_ADMIN"})
     public ResponseEntity<ApiResponse<?>> updateGithubAlert(@RequestBody UpdateAlertRequest request) {
         // 1) Validate or throw
         GitHubFindingUpdateService service = serviceByTool.get(request.getTool());

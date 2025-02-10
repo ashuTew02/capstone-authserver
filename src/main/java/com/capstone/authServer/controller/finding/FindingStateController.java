@@ -11,12 +11,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.capstone.authServer.dto.response.ApiResponse;
 import com.capstone.authServer.model.FindingState;
+import com.capstone.authServer.security.annotation.AllowedRoles;
 
 @RestController
 @CrossOrigin
 public class FindingStateController {
 
     @GetMapping("/findings/state")
+    @AllowedRoles({"USER", "ADMIN","SUPER_ADMIN"})
     public ResponseEntity<ApiResponse<?>> getStates() {
         List<FindingState> states = Arrays.asList(FindingState.values());
 

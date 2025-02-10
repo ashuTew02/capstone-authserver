@@ -11,12 +11,16 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.capstone.authServer.dto.response.ApiResponse;
 import com.capstone.authServer.model.FindingSeverity;
+import com.capstone.authServer.security.annotation.AllowedRoles;
 
 @RestController
 @CrossOrigin
+// @AllowedRoles("USER")
+
 public class FindingSeverityController {
 
     @GetMapping("/findings/severity")
+    @AllowedRoles({"USER", "ADMIN","SUPER_ADMIN"})
     public ResponseEntity<ApiResponse<?>> getSeverities() {
         List<FindingSeverity> severities = Arrays.asList(FindingSeverity.values());
 

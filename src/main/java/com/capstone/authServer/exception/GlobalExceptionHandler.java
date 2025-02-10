@@ -69,6 +69,11 @@ public class GlobalExceptionHandler {
         );
     }
 
+    // @ExceptionHandler(AccessDeniedException.class)
+    // public ApiResponse<?> handleAccessDenied(AccessDeniedException ex) {
+    //     return ApiResponse.error(HttpStatus.FORBIDDEN.value(), ex.getMessage());
+    // }
+
     /**
      * Catch-all for any other unhandled exceptions
      */

@@ -10,6 +10,14 @@ spring:
     properties:
       spring.json.add.type.headers: false
 
+  datasource:
+    url: jdbc:mysql://localhost:3306/authdb
+    username: root
+    password: root
+  jpa:
+    hibernate:
+      ddl-auto: update
+
 kafka:
   topics:
     scan-job: "scan-job"
@@ -23,3 +31,7 @@ logging:
       springframework:
         kafka: ERROR
     kafka: ERROR
+
+jwt:
+  secret: 8E6DF7A1C5B4E3F2D9A8B7C6D5E4F3A2B1C0D9E8F7A6B5C4D3E2F1A0B9C8D7E6
+  expiration-in-ms: 2592000000
