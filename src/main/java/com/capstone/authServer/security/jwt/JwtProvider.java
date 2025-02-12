@@ -25,13 +25,14 @@ public class JwtProvider {
         this.key = Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    public String generateToken(String email, String rolesCsv) {
+    public String generateToken(String email, Long tenantId, String role) {
         Instant now = Instant.now();
         Instant expiry = now.plusMillis(expirationMillis);
 
         return Jwts.builder()
                 .subject(email)
-                .claim("roles", rolesCsv)
+                .claim("tenantId", tenantId)
+                .claim("role", role)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
                 .signWith(key)
@@ -47,14 +48,23 @@ public class JwtProvider {
                 .getSubject();
     }
 
-    public String getRolesFromToken(String token) {
+    public String getRoleFromToken(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-        Object rolesObj = claims.get("roles");
-        return (rolesObj != null) ? rolesObj.toString() : "";
+        String roleObj = claims.get("role", String.class);
+        return (roleObj != null) ? roleObj : "";
+    }
+
+    public Long getTenantIdFromToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        return claims.get("tenantId", Long.class);
     }
 
     public boolean validateToken(String token) {

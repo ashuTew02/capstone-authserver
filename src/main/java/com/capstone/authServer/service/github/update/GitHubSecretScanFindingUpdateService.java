@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -20,13 +19,9 @@ import reactor.core.publisher.Mono;
 @Service
 public class GitHubSecretScanFindingUpdateService implements GitHubFindingUpdateService {
 
-    @Value("${github.pat}")
-    private String PERSONAL_ACCESS_TOKEN;
-    
     private final WebClient webClient;
     private final GitHubStateMapper<GithubSecretScanState, GithubSecretScanDismissedReason> secretScanMapper;
     private final ElasticSearchService esService;
-
 
     public GitHubSecretScanFindingUpdateService(
             WebClient.Builder webClientBuilder,
@@ -46,18 +41,24 @@ public class GitHubSecretScanFindingUpdateService implements GitHubFindingUpdate
     }
 
     @Override
-    public void updateFinding(String owner, String repo, Long alertNumber, FindingState findingState, String id) {
-        // 1) Map to GitHub state (no dismissed reason for secrets)
+    public void updateFinding(String owner,
+                              String repo,
+                              String personalAccessToken,
+                              Long alertNumber,
+                              FindingState findingState,
+                              String esFindingId,
+                              Long tenantId) {
+
         GithubSecretScanState state = secretScanMapper.mapState(findingState);
         Optional<GithubSecretScanDismissedReason> dismissedReasonOpt = secretScanMapper.mapDismissedReason(findingState);
-        // 2) Prepare request body
+
         Map<String, Object> body = new HashMap<>();
-        body.put("state", state.getValue());  // "open" or "resolved"
+        body.put("state", state.getValue());    // "open" or "resolved"
         dismissedReasonOpt.ifPresent(reason -> body.put("resolution", reason.getValue()));
-        // 3) PATCH request to GitHub Secret Scanning endpoint
+
         webClient.patch()
             .uri("/repos/{owner}/{repo}/secret-scanning/alerts/{alertNumber}", owner, repo, alertNumber)
-            .header("Authorization", "Bearer " + PERSONAL_ACCESS_TOKEN)
+            .header("Authorization", "Bearer " + personalAccessToken)
             .bodyValue(body)
             .retrieve()
             .onStatus(
@@ -70,6 +71,7 @@ public class GitHubSecretScanFindingUpdateService implements GitHubFindingUpdate
             .bodyToMono(Void.class)
             .block();
 
-        esService.updateFindingStateByFindingId(id, findingState);
+        esService.updateFindingStateByFindingId(esFindingId, findingState, tenantId);    // will also need tenantID later.
     }
 }
+

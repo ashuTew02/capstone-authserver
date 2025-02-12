@@ -1,51 +1,61 @@
 package com.capstone.authServer.model;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
-@Table(name = "users")
+@Table(name = "user")
 public class User {
-
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "oauth_id", nullable = false)
     private String oauthId;
-
+    
     @Column(nullable = false, unique = true)
     private String email;
-
+    
     private String name;
-
-    @Column(name = "image_url")
     private String imageUrl;
-
-    private String provider; // e.g. "google"
-
-    private boolean enabled = true;
-
-    @Column(name = "created_at")
+    private String provider;
+    
+    @Column(nullable = false)
+    private Boolean enabled = true;
+    
+    @Column(nullable = false, updatable = false, insertable = false,
+            columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private java.sql.Timestamp createdAt;
 
-    @Column(name = "updated_at")
+    @Column(nullable = false,
+            columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
     private java.sql.Timestamp updatedAt;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private Set<Role> roles = new HashSet<>();
+    @Column(name = "default_tenant_id", nullable = false)
+    private Long defaultTenantId;
+    
+    // The defaultTenant relationship:
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "default_tenant_id", insertable = false, updatable = false)
+    @JsonIgnore
+    private Tenant defaultTenant;
+    
+    // A user can be in multiple tenants
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties({"tenant", "user"}) 
+    private List<UserTenantMapping> userTenantMappings;
 
-    public User() {
-    }
-
-    // ---- Getters and Setters ----
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getOauthId() {
@@ -59,7 +69,7 @@ public class User {
     public String getEmail() {
         return email;
     }
-    
+
     public void setEmail(String email) {
         this.email = email;
     }
@@ -88,11 +98,11 @@ public class User {
         this.provider = provider;
     }
 
-    public boolean isEnabled() {
+    public Boolean getEnabled() {
         return enabled;
     }
 
-    public void setEnabled(boolean enabled) {
+    public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
     }
 
@@ -112,11 +122,34 @@ public class User {
         this.updatedAt = updatedAt;
     }
 
-    public Set<Role> getRoles() {
-        return roles;
+    public Long getDefaultTenantId() {
+        return defaultTenantId;
     }
 
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
+    public void setDefaultTenantId(Long defaultTenantId) {
+        this.defaultTenantId = defaultTenantId;
     }
+
+    public Tenant getDefaultTenant() {
+        return defaultTenant;
+    }
+
+    public void setDefaultTenant(Tenant defaultTenant) {
+        this.defaultTenant = defaultTenant;
+    }
+
+    public List<UserTenantMapping> getUserTenantMappings() {
+        return userTenantMappings;
+    }
+
+    public void setUserTenantMappings(List<UserTenantMapping> userTenantMappings) {
+        this.userTenantMappings = userTenantMappings;
+    }
+
+    // Getters and Setters (omitted for brevity)
+    
+    /* 
+       Example convenience method 
+       (e.g. to quickly see which roles across which tenants the user has, etc.) 
+    */
 }

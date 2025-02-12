@@ -55,6 +55,9 @@ public class RoleCheckAspect {
                 })
                 .collect(Collectors.toList());
 
+        logger.info("USER ROLES: " + userRoles.toString());
+        logger.info("ALLOWED ROLEs: " + requiredRoles.toString());
+
         // Check if user has at least one required role
         boolean hasRequiredRole = userRoles.stream()
                 .anyMatch(requiredRoles::contains);

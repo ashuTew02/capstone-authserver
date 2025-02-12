@@ -17,13 +17,24 @@ public class ScanRequestEvent {
     // @NotEmpty(message = "scanTypes list must not be empty")
     private List<ScanType> scanTypes;
 
+    private Long tenantId;
+
+    public Long getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
+    }
+
     public ScanRequestEvent() {
     }
 
-    public ScanRequestEvent(String owner, String repository, List<ScanType> scanTypes) {
+    public ScanRequestEvent(String owner, String repository, List<ScanType> scanTypes, Long tenantId) {
         this.owner = owner;
         this.repository = repository;
         this.scanTypes = scanTypes;
+        this.tenantId = tenantId;
     }
 
     // --- Getters and Setters ---

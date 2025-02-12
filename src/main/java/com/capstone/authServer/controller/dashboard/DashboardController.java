@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -29,7 +31,10 @@ public class DashboardController {
 
     @GetMapping("/toolDistribution")
     public ResponseEntity<?> getToolDistribution() {
-        Map<String, Long> dist = service.getToolDistribution();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long tenantId = (Long) auth.getDetails(); // we set this in JwtAuthenticationFilter
+        logger.info(tenantId.toString());
+        Map<String, Long> dist = service.getToolDistribution(tenantId);
         return ResponseEntity.ok(
             ApiResponse.success(
                 HttpStatus.OK.value(),
@@ -43,7 +48,9 @@ public class DashboardController {
     public ResponseEntity<?> getSeverityDistribution(
         @RequestParam(required = false) List<String> tool
     ) {
-        Map<String, Long> dist = service.getSeverityDistribution(tool);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long tenantId = (Long) auth.getDetails(); // we set this in JwtAuthenticationFilter
+        Map<String, Long> dist = service.getSeverityDistribution(tool, tenantId);
         return ResponseEntity.ok(
             ApiResponse.success(
                 HttpStatus.OK.value(),
@@ -57,7 +64,10 @@ public class DashboardController {
     public ResponseEntity<?> getStateDistribution(
         @RequestParam(required = false) List<String> tool
     ) {
-        Map<String, Long> dist = service.getStateDistribution(tool);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long tenantId = (Long) auth.getDetails(); // we set this in JwtAuthenticationFilter
+
+        Map<String, Long> dist = service.getStateDistribution(tool, tenantId);
         return ResponseEntity.ok(
             ApiResponse.success(
                 HttpStatus.OK.value(),
@@ -71,7 +81,10 @@ public class DashboardController {
     public ResponseEntity<?> getCvssDistribution(
         @RequestParam(required = false) List<String> tool
     ) throws ElasticsearchException, IOException {
-        List<Map<String, Object>> dist = service.getCvssDistribution(tool);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long tenantId = (Long) auth.getDetails(); // we set this in JwtAuthenticationFilter
+
+        List<Map<String, Object>> dist = service.getCvssDistribution(tool, tenantId);
         return ResponseEntity.ok(
             ApiResponse.success(
                 HttpStatus.OK.value(),

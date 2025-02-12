@@ -15,9 +15,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -31,29 +29,38 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws IOException, jakarta.servlet.ServletException {
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws IOException, jakarta.servlet.ServletException {
 
         try {
             String jwt = parseBearerToken(request);
             if (StringUtils.hasText(jwt) && jwtProvider.validateToken(jwt)) {
-                // Token is valid
+                // Extract needed data
                 String email = jwtProvider.getEmailFromToken(jwt);
-                String rolesCsv = jwtProvider.getRolesFromToken(jwt); // e.g. "USER,ADMIN"
-                List<SimpleGrantedAuthority> authorities = convertRolesToAuthorities(rolesCsv);
+                Long tenantId = jwtProvider.getTenantIdFromToken(jwt);
+                String role = jwtProvider.getRoleFromToken(jwt); // single role, e.g. "USER"
+
+                // Build a list of authorities. In Spring, roles typically start with "ROLE_"
+                SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
+                List<SimpleGrantedAuthority> authorities = List.of(authority);
 
                 // Build an Authentication object
+                // We’ll store the email as the principal, but you could store a custom UserPrincipal
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(email, null, authorities);
+
+                // If you want the tenantId accessible, you can store it in details:
+                authentication.setDetails(tenantId);
 
                 // Set it in context
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception ex) {
             logger.error("Could not set user authentication in security context", ex);
-            // We won't throw here; user will simply be unauthenticated
-            // If you want to short-circuit, you can send an error response.
+            // Optionally short-circuit with error response
         }
 
         filterChain.doFilter(request, response);
@@ -65,17 +72,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return headerAuth.substring(7);
         }
         return null;
-    }
-
-    private List<SimpleGrantedAuthority> convertRolesToAuthorities(String rolesCsv) {
-        if (!StringUtils.hasText(rolesCsv)) {
-            return List.of();
-        }
-        // rolesCsv is something like "USER,ADMIN"
-        return Arrays.stream(rolesCsv.split(","))
-                .map(String::trim)
-                .filter(r -> !r.isEmpty())
-                .map(r -> new SimpleGrantedAuthority("ROLE_" + r)) // Spring Security standard
-                .collect(Collectors.toList());
     }
 }

@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
-import java.util.stream.Collectors;
 
 @Component
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
@@ -20,7 +19,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private final UserService userService;
     private final JwtProvider jwtProvider;
 
-    // e.g., "http://localhost:5173" -- Adjust as needed
+    // e.g., "http://localhost:5173" — adjust as needed
     private static final String FRONTEND_REDIRECT_URL = "http://localhost:5173/oauth2/success";
 
     public OAuth2LoginSuccessHandler(UserService userService, JwtProvider jwtProvider) {
@@ -29,35 +28,31 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     }
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request,
-                                        HttpServletResponse response,
-                                        Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Authentication authentication
+    ) throws IOException, ServletException {
 
-        /*
-         * By the time this handler is called, the CustomOidcUserService has stored
-         * the user in DB. We can retrieve the user’s email from the “authentication.getName()”
-         * or from the OAuth2User attributes.
-         */
         String email = authentication.getName();
         if (!StringUtils.hasText(email)) {
-            // fallback - shouldn't happen if Google returns an email
+            // fallback
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "No email found from OAuth provider");
             return;
         }
 
-        // Retrieve user from DB to get roles
+        // Retrieve user from DB
         User user = userService.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found after OAuth login"));
 
-        // Convert user roles to CSV
-        String rolesCsv = user.getRoles().stream()
-                .map(r -> r.getName())
-                .collect(Collectors.joining(","));
+        // Determine user’s default tenant & role
+        Long tenantId = user.getDefaultTenantId();
+        String roleName = userService.findUserRoleInDefaultTenant(user);
 
         // Generate JWT
-        String token = jwtProvider.generateToken(user.getEmail(), rolesCsv);
+        String token = jwtProvider.generateToken(email, tenantId, roleName);
 
-        // Option 1: Redirect to your frontend with token as a query param:
+        // e.g. redirect to your React app with token
         String redirectUrl = FRONTEND_REDIRECT_URL + "?token=" + token;
         response.sendRedirect(redirectUrl);
     }

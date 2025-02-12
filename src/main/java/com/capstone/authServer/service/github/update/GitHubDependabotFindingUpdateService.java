@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -20,13 +19,9 @@ import reactor.core.publisher.Mono;
 @Service
 public class GitHubDependabotFindingUpdateService implements GitHubFindingUpdateService {
 
-    @Value("${github.pat}")
-    private String PERSONAL_ACCESS_TOKEN;
-
     private final WebClient webClient;
     private final GitHubStateMapper<GithubDependabotState, GithubDependabotDismissedReason> dependabotMapper;
     private final ElasticSearchService esService;
-
 
     public GitHubDependabotFindingUpdateService(
             WebClient.Builder webClientBuilder,
@@ -46,21 +41,24 @@ public class GitHubDependabotFindingUpdateService implements GitHubFindingUpdate
     }
 
     @Override
-    public void updateFinding(String owner, String repo, Long alertNumber, FindingState findingState, String id) {
-        // 1) Map to GitHub state/dismissedReason
-        GithubDependabotState state = dependabotMapper.mapState(findingState);
-        Optional<GithubDependabotDismissedReason> dismissedReasonOpt =
-                dependabotMapper.mapDismissedReason(findingState);
+    public void updateFinding(String owner,
+                              String repo,
+                              String personalAccessToken,
+                              Long alertNumber,
+                              FindingState findingState,
+                              String esFindingId,
+                              Long tenantId) {
 
-        // 2) Prepare request body
+        GithubDependabotState state = dependabotMapper.mapState(findingState);
+        Optional<GithubDependabotDismissedReason> dismissedReasonOpt = dependabotMapper.mapDismissedReason(findingState);
+
         Map<String, Object> body = new HashMap<>();
-        body.put("state", state.getValue()); // "open", "dismissed", "fixed", etc.
+        body.put("state", state.getValue()); // e.g. "open", "dismissed"
         dismissedReasonOpt.ifPresent(reason -> body.put("dismissed_reason", reason.getValue()));
 
-        // 3) PATCH request to GitHub Dependabot endpoint
         webClient.patch()
             .uri("/repos/{owner}/{repo}/dependabot/alerts/{alertNumber}", owner, repo, alertNumber)
-            .header("Authorization", "Bearer " + PERSONAL_ACCESS_TOKEN)
+            .header("Authorization", "Bearer " + personalAccessToken)
             .bodyValue(body)
             .retrieve()
             .onStatus(
@@ -73,6 +71,6 @@ public class GitHubDependabotFindingUpdateService implements GitHubFindingUpdate
             .bodyToMono(Void.class)
             .block();
 
-        esService.updateFindingStateByFindingId(id, findingState);
+        esService.updateFindingStateByFindingId(esFindingId, findingState, tenantId);
     }
 }

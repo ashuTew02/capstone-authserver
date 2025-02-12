@@ -7,11 +7,14 @@ import com.capstone.authServer.model.Finding;
 import com.capstone.authServer.model.FindingSeverity;
 import com.capstone.authServer.model.FindingState;
 import com.capstone.authServer.model.ScanToolType;
+import com.capstone.authServer.model.Tenant;
 import com.capstone.authServer.security.annotation.AllowedRoles;
 import com.capstone.authServer.service.ElasticSearchService;
 import com.capstone.authServer.utils.FindingToFindingResponseDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -44,13 +47,16 @@ public class FindingController {
           and we simply won't filter by that field.
           e.g. /findings?severity=HIGH&severity=LOW => severity = [HIGH, LOW]
         */
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long tenantId = (Long) auth.getDetails(); // we set this in JwtAuthenticationFilter
 
         SearchResultDTO<Finding> searchResult = service.searchFindings(
                 toolType,
                 severity,
                 state,
                 page,
-                size
+                size,
+                tenantId
         );
 
         // Convert findings to DTO
@@ -77,7 +83,10 @@ public class FindingController {
     @GetMapping("finding")
     @AllowedRoles({"USER", "ADMIN","SUPER_ADMIN"})
     public ResponseEntity<ApiResponse<?>> getFindingById(@RequestParam String id) {
-        Finding finding = service.getFindingById(id);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long tenantId = (Long) auth.getDetails(); // we set this in JwtAuthenticationFilter
+
+        Finding finding = service.getFindingById(id, tenantId);
         FindingResponseDTO dto = FindingToFindingResponseDTO.convert(finding);
         return new ResponseEntity<>(
             ApiResponse.success(HttpStatus.OK.value(), "Finding fetched successfully.", dto),

@@ -22,23 +22,20 @@ public class CustomOidcUserService implements OAuth2UserService<OidcUserRequest,
 
     @Override
     public OidcUser loadUser(OidcUserRequest userRequest) {
-        // Delegate to the default OidcUserService first
+        // Delegate to default
         OidcUser oidcUser = new OidcUserService().loadUser(userRequest);
 
         // Extract attributes
         Map<String, Object> attributes = oidcUser.getAttributes();
-        // "sub" is the unique Google user ID
         String oauthId = (String) attributes.get("sub");
-        // "email" might come from the ID token claims
         String email   = (String) attributes.get("email");
         String name    = (String) attributes.get("name");
         String picture = (String) attributes.get("picture");
 
-        // Upsert the user in DB
+        // Upsert
         User user = userService.handleOAuth2User(oauthId, email, name, picture, "google");
 
-        // Return a new DefaultOidcUser, 
-        // we can choose "email" as the name attribute if you want to call getName() -> email
+        // Return a new DefaultOidcUser
         return new DefaultOidcUser(
             oidcUser.getAuthorities(),
             oidcUser.getIdToken(),

@@ -10,15 +10,11 @@ import co.elastic.clients.elasticsearch._types.aggregations.StringTermsBucket;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import io.jsonwebtoken.io.IOException;
-
 import com.capstone.authServer.dto.SearchResultDTO;
 import com.capstone.authServer.exception.ElasticsearchOperationException;
-import com.capstone.authServer.model.Finding;
-import com.capstone.authServer.model.FindingSeverity;
-import com.capstone.authServer.model.FindingState;
-import com.capstone.authServer.model.ScanToolType;
-
+import com.capstone.authServer.model.*;
+import com.capstone.authServer.repository.TenantRepository;
+import io.jsonwebtoken.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -29,17 +25,28 @@ import java.util.stream.Collectors;
 
 @Service
 public class ElasticSearchService {
+
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchService.class);
     private final ElasticsearchClient esClient;
+    private final TenantRepository tenantRepository;
 
-    public ElasticSearchService(ElasticsearchClient esClient) {
+    public ElasticSearchService(
+            ElasticsearchClient esClient,
+            TenantRepository tenantRepository
+    ) {
         this.esClient = esClient;
+        this.tenantRepository = tenantRepository;
     }
 
-    public void saveFinding(Finding finding) {
+    /**
+     * Save a single finding into the tenant-specific index.
+     */
+    public void saveFinding(Finding finding, Long tenantId) {
+        String indexName = getIndexNameForTenant(tenantId);
+
         try {
             esClient.index(i -> i
-                .index("findings")
+                .index(indexName)
                 .id(finding.getId())
                 .document(finding)
             );
@@ -56,8 +63,11 @@ public class ElasticSearchService {
             List<FindingSeverity> severities,
             List<FindingState> states,
             int page,
-            int size
+            int size,
+            Long tenantId
     ) {
+        String indexName = getIndexNameForTenant(tenantId);
+
         try {
             var boolQuery = new FindingSearchQueryBuilder()
                     .withToolTypes(toolTypes)
@@ -66,7 +76,7 @@ public class ElasticSearchService {
                     .build();
 
             SearchResponse<Finding> response = esClient.search(s -> s
-                    .index("findings")
+                    .index(indexName)
                     .query(q -> q.bool(boolQuery))
                     .sort(sort -> sort
                         .field(f -> f
@@ -98,14 +108,16 @@ public class ElasticSearchService {
     // ============================================================
     //                 GET SINGLE FINDING BY ID
     // ============================================================
-    public Finding getFindingById(String id) {
+    public Finding getFindingById(String id, Long tenantId) {
+        String indexName = getIndexNameForTenant(tenantId);
+
         try {
             var boolQuery = new FindingSearchQueryBuilder()
                     .withId(id)
                     .build();
 
             SearchResponse<Finding> response = esClient.search(s -> s
-                    .index("findings")
+                    .index(indexName)
                     .query(q -> q.bool(boolQuery))
                     .size(1),
                 Finding.class
@@ -121,24 +133,30 @@ public class ElasticSearchService {
                 return findings.get(0);
             }
         } catch (Exception e) {
-            throw new ElasticsearchOperationException("Can't find the given finding.", e);
+            throw new ElasticsearchOperationException("Can't find the given finding in tenant's index.", e);
         }
     }
 
     // ============================================================
     //            UPDATE A FINDING'S STATE (PATCH)
     // ============================================================
-    public void updateFindingStateByFindingId(String id, FindingState state) {
+    public void updateFindingStateByFindingId(String id, FindingState state, Long tenantId) {
+        String indexName = getIndexNameForTenant(tenantId);
+
         try {
-            Finding finding = getFindingById(id);
+            // 1) Get the finding in the tenant's index
+            Finding finding = getFindingById(id, tenantId);
             if (finding == null) {
                 throw new ElasticsearchOperationException("Finding not found with ID: " + id);
             }
+
+            // 2) Update
             finding.setState(state);
             finding.setUpdatedAt(LocalDateTime.now().toString());
 
+            // 3) Re-index
             esClient.index(i -> i
-                .index("findings")
+                .index(indexName)
                 .id(finding.getId())
                 .document(finding)
             );
@@ -151,14 +169,12 @@ public class ElasticSearchService {
     //                 DASHBOARD AGGREGATIONS
     // ============================================================
 
-    /**
-     * Returns the distribution of findings by toolType (CODE_SCAN, DEPENDABOT, SECRET_SCAN).
-     * -> Terms aggregator on "toolType.keyword" (string).
-     */
-    public Map<String, Long> getToolDistribution() {
+    public Map<String, Long> getToolDistribution(Long tenantId) {
+        String indexName = getIndexNameForTenant(tenantId);
+
         try {
             SearchResponse<Void> response = esClient.search(s -> s
-                    .index("findings")
+                    .index(indexName)
                     .size(0)
                     .aggregations("toolAgg", a -> a
                         .terms(t -> t.field("toolType.keyword").size(10))
@@ -180,13 +196,10 @@ public class ElasticSearchService {
             throw new ElasticsearchOperationException("Error aggregating tool distribution.", e);
         }
     }
-    
 
-    /**
-     * Returns distribution by severity (CRITICAL, HIGH, etc.), optionally filtered by tool.
-     * -> Terms aggregator on "severity.keyword" (string).
-     */
-    public Map<String, Long> getSeverityDistribution(List<String> tool) {
+    public Map<String, Long> getSeverityDistribution(List<String> tool, Long tenantId) {
+        String indexName = getIndexNameForTenant(tenantId);
+
         try {
             var qb = new FindingSearchQueryBuilder();
             if (tool != null && !tool.isEmpty()) {
@@ -204,7 +217,7 @@ public class ElasticSearchService {
             var boolQuery = qb.build();
     
             SearchResponse<Void> response = esClient.search(s -> s
-                    .index("findings")
+                    .index(indexName)
                     .size(0)
                     .query(q -> q.bool(boolQuery))
                     .aggregations("severityAgg", a -> a
@@ -216,7 +229,6 @@ public class ElasticSearchService {
             var agg = response.aggregations().get("severityAgg").sterms();
             Map<String, Long> result = new LinkedHashMap<>();
             for (StringTermsBucket bucket : agg.buckets().array()) {
-                // Convert the FieldValue to String
                 String key = bucket.key().stringValue();
                 long docCount = bucket.docCount();
                 result.put(key, docCount);
@@ -226,13 +238,10 @@ public class ElasticSearchService {
             throw new ElasticsearchOperationException("Error aggregating severity distribution.", e);
         }
     }
-    
 
-    /**
-     * Returns distribution by state (OPEN, FIXED, SUPPRESSED, etc.), optionally filtered by tool.
-     * -> Terms aggregator on "state.keyword" (string).
-     */
-    public Map<String, Long> getStateDistribution(List<String> tool) {
+    public Map<String, Long> getStateDistribution(List<String> tool, Long tenantId) {
+        String indexName = getIndexNameForTenant(tenantId);
+
         try {
             var qb = new FindingSearchQueryBuilder();
             if (tool != null && !tool.isEmpty()) {
@@ -247,7 +256,7 @@ public class ElasticSearchService {
             var boolQuery = qb.build();
     
             SearchResponse<Void> response = esClient.search(s -> s
-                    .index("findings")
+                    .index(indexName)
                     .size(0)
                     .query(q -> q.bool(boolQuery))
                     .aggregations("stateAgg", a -> a
@@ -268,22 +277,19 @@ public class ElasticSearchService {
             throw new ElasticsearchOperationException("Error aggregating state distribution.", e);
         }
     }
-    
 
-    /**
-     * Returns distribution of findings by CVSS score bins (0-1,1-2,...9-10).
-     * -> "histogram" aggregator on numeric field "cvss".
-     * @throws java.io.IOException 
-     * @throws ElasticsearchException 
-     */
-public List<Map<String, Object>> getCvssDistribution(List<String> tool) throws ElasticsearchException, java.io.IOException{
+    public List<Map<String, Object>> getCvssDistribution(List<String> tool, Long tenantId)
+            throws ElasticsearchException, java.io.IOException {
+
+        String indexName = getIndexNameForTenant(tenantId);
+
         /*
          * We'll do a histogram aggregator with a script that:
          * 1) Checks doc['cvss.keyword'].size() != 0
          * 2) Tries Double.parseDouble(...)
          * 3) If missing/invalid => return -1
          */
-        logger.info("AFTER AGGREGATION: ");
+        logger.info("Performing CVSS distribution histogram for tenantId={} on index={}", tenantId, indexName);
 
         Aggregation histAgg = Aggregation.of(a -> a
             .histogram(h -> h
@@ -310,21 +316,27 @@ public List<Map<String, Object>> getCvssDistribution(List<String> tool) throws E
                 )
             )
         );
+
+        // If you need to filter by tool, you can do so similarly to severityDistribution, etc.
+        // e.g. build a boolQuery with tool filters, pass it to .query(...) as well.
+        
         SearchRequest sr = SearchRequest.of(s -> s
-            .index("findings")
+            .index(indexName)
             .size(0)
             .aggregations("cvssHist", histAgg)
         );
         SearchResponse<Void> resp = esClient.search(sr, Void.class);
+
         var histogramAgg = resp.aggregations().get("cvssHist").histogram();
         var buckets = histogramAgg.buckets().array();
         List<Map<String, Object>> results = new ArrayList<>();
         for (HistogramBucket bucket : buckets) {
             double key = bucket.key();    // e.g. 0.0,1.0,2.0,...
             long docCount = bucket.docCount();
-            // If key == -1 => those are docs we couldn't parse or missing.
-            // We can skip them or keep them. If skipping:
+            // If key == -1 => docs we couldn't parse or missing.
+            // skip them if you'd like
             if (key < 0) continue;
+
             Map<String, Object> item = new HashMap<>();
             item.put("bucket", key);
             item.put("count", docCount);
@@ -332,5 +344,22 @@ public List<Map<String, Object>> getCvssDistribution(List<String> tool) throws E
         }
         return results;
     }
-    
+
+    // ============================================================
+    //                   HELPER METHODS
+    // ============================================================
+    /**
+     * Retrieves the tenant’s elasticsearch index from the DB.
+     * e.g. “finding_3” or whatever is stored in tenant.findingEsIndex
+     */
+    private String getIndexNameForTenant(Long tenantId) {
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new ElasticsearchOperationException("Tenant not found with ID: " + tenantId));
+
+        String indexName = tenant.getFindingEsIndex();
+        if (indexName == null || indexName.isBlank()) {
+            throw new ElasticsearchOperationException("Tenant " + tenantId + " has an invalid ES index name!");
+        }
+        return indexName;
+    }
 }
