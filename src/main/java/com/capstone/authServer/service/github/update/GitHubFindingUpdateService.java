@@ -1,13 +1,13 @@
 package com.capstone.authServer.service.github.update;
 
 import com.capstone.authServer.model.FindingState;
-import com.capstone.authServer.model.ScanToolType;
+import com.capstone.authServer.model.Tool;
 
 public interface GitHubFindingUpdateService {
     /**
      * @return which GitHub tool (CODE_SCAN, DEPENDABOT, SECRET_SCAN, etc.)
      */
-    ScanToolType getToolType();
+    Tool getToolType();
 
     /**
      * Update a GitHub finding for the given tool.

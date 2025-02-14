@@ -1,17 +1,23 @@
 package com.capstone.authServer.controller;
 
-import com.capstone.authServer.dto.event.ScanRequestEvent;
+import com.capstone.authServer.dto.event.ScanRequestJobEvent;
+import com.capstone.authServer.dto.event.payload.ScanRequestJobEventPayload;
 import com.capstone.authServer.dto.scan.request.ScanRequestDTO;
 import com.capstone.authServer.dto.response.ApiResponse;
-import com.capstone.authServer.kafka.producer.ScanRequestEventProducer;
+import com.capstone.authServer.kafka.producer.ScanRequestJobEventProducer;
 import com.capstone.authServer.model.Tenant;
+import com.capstone.authServer.model.Tool;
 import com.capstone.authServer.repository.TenantRepository;
 import com.capstone.authServer.security.annotation.AllowedRoles;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Arrays;
+import java.util.List;
 
 import javax.validation.Valid;
 
@@ -20,10 +26,10 @@ import javax.validation.Valid;
 @CrossOrigin
 public class ScanController {
 
-    private final ScanRequestEventProducer producer;
+    private final ScanRequestJobEventProducer producer;
     private final TenantRepository tenantRepository;
 
-    public ScanController(ScanRequestEventProducer producer,
+    public ScanController(ScanRequestJobEventProducer producer,
                           TenantRepository tenantRepository) {
         this.producer = producer;
         this.tenantRepository = tenantRepository;
@@ -40,18 +46,25 @@ public class ScanController {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found with ID: " + tenantId));
 
-        // 3) Build a new event with the DB’s owner & repo
-        ScanRequestEvent event = new ScanRequestEvent(
-            tenant.getOwner(),       // from DB
-            tenant.getRepo(),        // from DB
-            request.getScanTypes(),
-            tenantId   // from client’s request
-        );
+        List<Tool> toolsToBeScanned;        
+        if(request.getScanAll() || request.getToolsToScan() == null || request.getToolsToScan().isEmpty()) {
+            toolsToBeScanned = Arrays.asList(Tool.values());
+        } else {
+            toolsToBeScanned = request.getToolsToScan();
+        }
 
-        // 4) Publish to Kafka
-        producer.produce(event);
+        for (Tool tool : toolsToBeScanned) {
+            ScanRequestJobEventPayload payload = new ScanRequestJobEventPayload(
+                tool,
+                tenantId,
+                tenant.getOwner(),
+                tenant.getRepo()
+            );
+            ScanRequestJobEvent event = new ScanRequestJobEvent(payload);
+            producer.produce(event);
+        }
+        
 
-        // 5) Return success
         return new ResponseEntity<>(
             ApiResponse.success(HttpStatus.OK.value(), "Scan Request Event published successfully!", null),
             HttpStatus.OK

@@ -1,26 +1,33 @@
 package com.capstone.authServer.dto.scan.request;
 
-import com.capstone.authServer.model.ScanType;
-import javax.validation.constraints.NotEmpty;
+import com.capstone.authServer.model.Tool;
 import java.util.List;
 
 public class ScanRequestDTO {
 
-    @NotEmpty(message = "scanTypes list must not be empty")
-    private List<ScanType> scanTypes;
+    private List<Tool> toolsToScan;
+    Boolean scanAll = false;
+
+    public Boolean getScanAll() {
+        return scanAll;
+    }
+
+    public void setScanAll(Boolean scanAll) {
+        this.scanAll = scanAll;
+    }
 
     public ScanRequestDTO() {
     }
 
-    public ScanRequestDTO(List<ScanType> scanTypes) {
-        this.scanTypes = scanTypes;
+    public ScanRequestDTO(List<Tool> toolsToScan) {
+        this.toolsToScan = toolsToScan;
     }
 
-    public List<ScanType> getScanTypes() {
-        return scanTypes;
+    public List<Tool> getToolsToScan() {
+        return toolsToScan;
     }
 
-    public void setScanTypes(List<ScanType> scanTypes) {
-        this.scanTypes = scanTypes;
+    public void setToolsToScan(List<Tool> toolsToScan) {
+        this.toolsToScan = toolsToScan;
     }
 }

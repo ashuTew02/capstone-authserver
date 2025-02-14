@@ -5,7 +5,7 @@ import java.util.stream.Collectors;
 
 import com.capstone.authServer.model.FindingSeverity;
 import com.capstone.authServer.model.FindingState;
-import com.capstone.authServer.model.ScanToolType;
+import com.capstone.authServer.model.Tool;
 
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
@@ -22,7 +22,7 @@ public class FindingSearchQueryBuilder {
     /**
      * Filter by a list of toolTypes (OR logic within this list).
      */
-    public FindingSearchQueryBuilder withToolTypes(List<ScanToolType> toolTypes) {
+    public FindingSearchQueryBuilder withToolTypes(List<Tool> toolTypes) {
         if (toolTypes != null && !toolTypes.isEmpty()) {
             // Convert each enum to a FieldValue
             List<FieldValue> fieldValues = toolTypes.stream()

@@ -11,7 +11,7 @@ public class Finding {
     private FindingSeverity severity;
     private FindingState state;
     private String url;
-    private ScanToolType toolType;
+    private Tool toolType;
 
     private String cve;
     private List<String> cwes;
@@ -86,10 +86,10 @@ public class Finding {
         this.url = url;
     }
 
-    public ScanToolType getToolType() {
+    public Tool getToolType() {
         return toolType;
     }
-    public void setToolType(ScanToolType toolType) {
+    public void setToolType(Tool toolType) {
         this.toolType = toolType;
     }
 

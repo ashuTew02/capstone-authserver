@@ -2,7 +2,7 @@ package com.capstone.authServer.controller;
 
 import com.capstone.authServer.dto.UpdateAlertRequest;
 import com.capstone.authServer.dto.response.ApiResponse;
-import com.capstone.authServer.model.ScanToolType;
+import com.capstone.authServer.model.Tool;
 import com.capstone.authServer.model.Tenant;
 import com.capstone.authServer.repository.TenantRepository;
 import com.capstone.authServer.security.annotation.AllowedRoles;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @CrossOrigin
 public class GitHubAlertController {
 
-    private final Map<ScanToolType, GitHubFindingUpdateService> serviceByTool;
+    private final Map<Tool, GitHubFindingUpdateService> serviceByTool;
     private final TenantRepository tenantRepository;
 
     public GitHubAlertController(

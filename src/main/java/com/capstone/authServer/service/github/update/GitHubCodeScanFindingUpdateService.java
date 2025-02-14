@@ -1,7 +1,7 @@
 package com.capstone.authServer.service.github.update;
 
 import com.capstone.authServer.model.FindingState;
-import com.capstone.authServer.model.ScanToolType;
+import com.capstone.authServer.model.Tool;
 import com.capstone.authServer.model.github.dismissedreason.GithubCodeScanDismissedReason;
 import com.capstone.authServer.model.github.state.GithubCodeScanState;
 import com.capstone.authServer.service.ElasticSearchService;
@@ -34,8 +34,8 @@ public class GitHubCodeScanFindingUpdateService implements GitHubFindingUpdateSe
     }
 
     @Override
-    public ScanToolType getToolType() {
-        return ScanToolType.CODE_SCAN;
+    public Tool getToolType() {
+        return Tool.CODE_SCAN;
     }
 
     @Override

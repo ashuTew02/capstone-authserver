@@ -59,7 +59,7 @@ public class ElasticSearchService {
     //               MAIN SEARCH (Findings List)
     // ============================================================
     public SearchResultDTO<Finding> searchFindings(
-            List<ScanToolType> toolTypes,
+            List<Tool> toolTypes,
             List<FindingSeverity> severities,
             List<FindingState> states,
             int page,
@@ -203,10 +203,10 @@ public class ElasticSearchService {
         try {
             var qb = new FindingSearchQueryBuilder();
             if (tool != null && !tool.isEmpty()) {
-                List<ScanToolType> toolTypes = new ArrayList<>();
+                List<Tool> toolTypes = new ArrayList<>();
                 for (String t : tool) {
                     try {
-                        toolTypes.add(ScanToolType.valueOf(t));
+                        toolTypes.add(Tool.valueOf(t));
                     } catch (Exception ex) {
                         // ignore invalid
                     }
@@ -245,10 +245,10 @@ public class ElasticSearchService {
         try {
             var qb = new FindingSearchQueryBuilder();
             if (tool != null && !tool.isEmpty()) {
-                List<ScanToolType> toolTypes = new ArrayList<>();
+                List<Tool> toolTypes = new ArrayList<>();
                 for (String t : tool) {
                     try {
-                        toolTypes.add(ScanToolType.valueOf(t));
+                        toolTypes.add(Tool.valueOf(t));
                     } catch (Exception ignored) {}
                 }
                 qb.withToolTypes(toolTypes);

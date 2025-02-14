@@ -5,7 +5,7 @@ import java.util.Map;
 
 import com.capstone.authServer.model.FindingSeverity;
 import com.capstone.authServer.model.FindingState;
-import com.capstone.authServer.model.ScanToolType;
+import com.capstone.authServer.model.Tool;
 
 //EXCLUDES toolAdditionalProperties
 public class FindingResponseDTO {
@@ -16,7 +16,7 @@ public class FindingResponseDTO {
     private FindingSeverity severity;
     private FindingState state;
     private String url;
-    private ScanToolType toolType;
+    private Tool toolType;
 
     private String cve;
     private List<String> cwes;
@@ -90,10 +90,10 @@ public class FindingResponseDTO {
         this.url = url;
     }
 
-    public ScanToolType getToolType() {
+    public Tool getToolType() {
         return toolType;
     }
-    public void setToolType(ScanToolType toolType) {
+    public void setToolType(Tool toolType) {
         this.toolType = toolType;
     }
 

@@ -6,7 +6,7 @@ import com.capstone.authServer.dto.response.ApiResponse;
 import com.capstone.authServer.model.Finding;
 import com.capstone.authServer.model.FindingSeverity;
 import com.capstone.authServer.model.FindingState;
-import com.capstone.authServer.model.ScanToolType;
+import com.capstone.authServer.model.Tool;
 import com.capstone.authServer.model.Tenant;
 import com.capstone.authServer.security.annotation.AllowedRoles;
 import com.capstone.authServer.service.ElasticSearchService;
@@ -35,7 +35,7 @@ public class FindingController {
     @AllowedRoles({"USER", "ADMIN","SUPER_ADMIN"})
     public ResponseEntity<ApiResponse<?>> getFindings(
             // Changed each of these to List<T> to allow multiple
-            @RequestParam(required = false) List<ScanToolType> toolType,
+            @RequestParam(required = false) List<Tool> toolType,
             @RequestParam(required = false) List<FindingSeverity> severity,
             @RequestParam(required = false) List<FindingState> state,
             @RequestParam(defaultValue = "0") int page,
@@ -49,6 +49,7 @@ public class FindingController {
         */
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long tenantId = (Long) auth.getDetails(); // we set this in JwtAuthenticationFilter
+    
 
         SearchResultDTO<Finding> searchResult = service.searchFindings(
                 toolType,

@@ -47,10 +47,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         // Determine user’s default tenant & role
         Long tenantId = user.getDefaultTenantId();
-        String roleName = userService.findUserRoleInDefaultTenant(user);
 
         // Generate JWT
-        String token = jwtProvider.generateToken(email, tenantId, roleName);
+        String token = jwtProvider.generateToken(email, tenantId);
 
         // e.g. redirect to your React app with token
         String redirectUrl = FRONTEND_REDIRECT_URL + "?token=" + token;

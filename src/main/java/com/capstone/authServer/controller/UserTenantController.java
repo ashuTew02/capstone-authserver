@@ -9,7 +9,6 @@ import com.capstone.authServer.repository.TenantRepository;
 import com.capstone.authServer.repository.UserTenantMappingRepository;
 import com.capstone.authServer.security.jwt.JwtProvider;
 import com.capstone.authServer.service.UserService;
-import com.capstone.authServer.controller.dashboard.DashboardController;
 import com.capstone.authServer.dto.UserTenantDTO;
 
 import org.slf4j.Logger;
@@ -32,7 +31,6 @@ import java.util.stream.Collectors;
 @CrossOrigin
 public class UserTenantController {
 
-    private static final String FRONTEND_REDIRECT_URL = "http://localhost:5173/oauth2/success"; 
     // or wherever your frontend wants to handle the new token
 
     private final UserService userService;
@@ -106,20 +104,10 @@ public class UserTenantController {
      * Then it redirects to "http://localhost:5173/tenantSwitch/success?token=..."
      */
     @GetMapping("/tenant/switch")
-    public ApiResponse<?> switchTenant(@RequestParam("tenantId") Long tenantId
-                            //  @RequestParam(value = "redirectUrl", required = false) String redirectUrl,
-                            //  @RequestParam(value = "role", required = false) String requestedRole,
-                             // "role" param is optional if you want to let user pick a role 
-                            //  // if they have multiple roles in the same tenant. Typically not needed.
-                            //  @RequestHeader(value = "referer", required = false) String referer,
-                            //  @RequestHeader(value = "origin", required = false) String origin,
-                            //  @RequestHeader(value = "host", required = false) String host,
-                            //  @RequestHeader(value = "User-Agent", required = false) String userAgent
-    ) throws java.io.IOException {
+    public ApiResponse<?> switchTenant(@RequestParam("tenantId") Long tenantId) throws java.io.IOException {
         // 1) Identify the current user from SecurityContext
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
-        String redirectUrl = FRONTEND_REDIRECT_URL;
 
         if (!StringUtils.hasText(email)) {
             // Usually you'd return a 401, but you mentioned wanting to redirect. 
@@ -135,38 +123,12 @@ public class UserTenantController {
         UserTenantMapping mapping = userService.findUserTenantMapping(user.getId(), tenantId)
             .orElseThrow(() -> new RuntimeException("User is not a member of tenant " + tenantId));
 
-        // If the user has multiple roles for the same tenant, 
-        // you could pick one based on "requestedRole" param or just use what we have:
-        String actualRole = mapping.getRole().getName();
-
         // 3) Generate a NEW JWT for that tenant
         String newToken = jwtProvider.generateToken(
                 user.getEmail(),
-                tenantId,
-                actualRole
+                tenantId
         );
 
-        // 4) Optional: You can update user’s defaultTenantId in DB if you want
-        // userService.updateUserDefaultTenant(user, tenantId);
-
-        // 5) Prepare the final redirect URL
-        // String finalRedirect = (redirectUrl != null && !redirectUrl.isBlank())
-        //         ? redirectUrl
-        //         : FRONTEND_REDIRECT_URL;
-        // // Attach the token as a query param
-        // finalRedirect = finalRedirect + "?token=" + newToken;
-
-        // // 6) Perform the redirect
-        // // This method signature returns void, so we manually manipulate the response:
-        // jakarta.servlet.http.HttpServletResponse servletResponse =
-        //         ((org.springframework.web.context.request.ServletRequestAttributes)
-        //          org.springframework.web.context.request.RequestContextHolder
-        //                  .currentRequestAttributes())
-        //                 .getResponse();
-
-        // if (servletResponse != null) {
-        //     servletResponse.sendRedirect(finalRedirect);
-        // }
         Map<String, Object> response = new LinkedHashMap<String, Object>();
         response.put("token", newToken);
         return ApiResponse.success(HttpStatus.OK.value(), "Successfully switched to tenant " + tenantId, response);

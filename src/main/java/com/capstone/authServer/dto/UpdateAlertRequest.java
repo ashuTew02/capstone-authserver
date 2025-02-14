@@ -1,11 +1,11 @@
 package com.capstone.authServer.dto;
 
 import com.capstone.authServer.model.FindingState;
-import com.capstone.authServer.model.ScanToolType;
+import com.capstone.authServer.model.Tool;
 
 public class UpdateAlertRequest {
 
-    private ScanToolType tool;
+    private Tool tool;
     private Long alertNumber;
     private FindingState findingState;
     private String id;
@@ -18,11 +18,11 @@ public class UpdateAlertRequest {
         this.id = id;
     }
 
-    public ScanToolType getTool() {
+    public Tool getTool() {
         return tool;
     }
 
-    public void setTool(ScanToolType tool) {
+    public void setTool(Tool tool) {
         this.tool = tool;
     }
 

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.capstone.authServer.model.FindingState;
-import com.capstone.authServer.model.ScanToolType;
+import com.capstone.authServer.model.Tool;
 import com.capstone.authServer.model.github.dismissedreason.GithubSecretScanDismissedReason;
 import com.capstone.authServer.model.github.state.GithubSecretScanState;
 import com.capstone.authServer.service.ElasticSearchService;
@@ -36,8 +36,8 @@ public class GitHubSecretScanFindingUpdateService implements GitHubFindingUpdate
     }
 
     @Override
-    public ScanToolType getToolType() {
-        return ScanToolType.SECRET_SCAN;
+    public Tool getToolType() {
+        return Tool.SECRET_SCAN;
     }
 
     @Override
