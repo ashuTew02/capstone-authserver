@@ -8,6 +8,7 @@ import com.capstone.authServer.model.EventType;
 public class ScanParseJobEvent implements Event<ScanParseJobEventPayload>{
     private ScanParseJobEventPayload payload;
     private String eventId;
+    private EventType type = EventType.SCAN_PARSE_JOB;
 
     public ScanParseJobEvent(ScanParseJobEventPayload payload) {
         this.eventId = UUID.randomUUID().toString();
@@ -20,7 +21,7 @@ public class ScanParseJobEvent implements Event<ScanParseJobEventPayload>{
 
     @Override
     public EventType getType() {
-        return EventType.SCAN_PARSE_JOB;
+        return type;
     }
 
     @Override

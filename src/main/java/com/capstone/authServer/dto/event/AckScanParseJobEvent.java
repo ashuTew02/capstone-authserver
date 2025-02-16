@@ -8,6 +8,8 @@ import com.capstone.authServer.model.EventType;
 public class AckScanParseJobEvent implements Event<AckJobEventPayload>{
     private AckJobEventPayload payload;
     private String eventId;
+    private EventType type = EventType.ACK_SCAN_PARSE_JOB;
+
 
     public AckScanParseJobEvent(AckJobEventPayload payload) {
         this.eventId = UUID.randomUUID().toString();
@@ -20,7 +22,7 @@ public class AckScanParseJobEvent implements Event<AckJobEventPayload>{
 
     @Override
     public EventType getType() {
-        return EventType.ACK_SCAN_PARSE_JOB;
+        return type;
     }
 
     @Override

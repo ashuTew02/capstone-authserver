@@ -61,6 +61,7 @@ public class ScanController {
                 tenant.getRepo()
             );
             ScanRequestJobEvent event = new ScanRequestJobEvent(payload);
+            System.out.println("ScanRequestJobEvent produced at controller: " + event.toString());
             producer.produce(event);
         }
         
