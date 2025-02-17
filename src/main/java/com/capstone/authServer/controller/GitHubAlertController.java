@@ -1,7 +1,10 @@
 package com.capstone.authServer.controller;
 
 import com.capstone.authServer.dto.UpdateAlertRequest;
+import com.capstone.authServer.dto.event.StateUpdateJobEvent;
+import com.capstone.authServer.dto.event.payload.StateUpdateJobEventPayload;
 import com.capstone.authServer.dto.response.ApiResponse;
+import com.capstone.authServer.kafka.producer.StateUpdateJobEventProducer;
 import com.capstone.authServer.model.Tool;
 import com.capstone.authServer.model.Tenant;
 import com.capstone.authServer.repository.TenantRepository;
@@ -25,10 +28,12 @@ public class GitHubAlertController {
 
     private final Map<Tool, GitHubFindingUpdateService> serviceByTool;
     private final TenantRepository tenantRepository;
+    private final StateUpdateJobEventProducer producer;
 
     public GitHubAlertController(
             List<GitHubFindingUpdateService> services,
-            TenantRepository tenantRepository
+            TenantRepository tenantRepository,
+            StateUpdateJobEventProducer producer
     ) {
         // Build a map { CODE_SCAN -> codeScanService, DEPENDABOT -> depService, etc. }
         this.serviceByTool = services.stream()
@@ -37,6 +42,7 @@ public class GitHubAlertController {
                 Function.identity()
             ));
         this.tenantRepository = tenantRepository;
+        this.producer = producer;
     }
 
     @PatchMapping("/alert")
@@ -53,22 +59,33 @@ public class GitHubAlertController {
         Long tenantId = (Long) auth.getDetails(); // we set this in JwtAuthenticationFilter
         Tenant tenant = tenantRepository.findById(tenantId)
             .orElseThrow(() -> new RuntimeException("Tenant not found with ID: " + tenantId));
-
+        String esFindingId = request.getId();
         // 3) Extract needed data from Tenant
         String owner = tenant.getOwner();
         String repo = tenant.getRepo();
-        String pat  = tenant.getPat();  // personal access token
-
-        // 4) Call the appropriate service
-        service.updateFinding(
+        // String pat  = tenant.getPat();  // personal access token
+        Tool tool = request.getTool();
+        StateUpdateJobEventPayload payload = new StateUpdateJobEventPayload(
+            esFindingId,
+            tenantId,
+            tool,
             owner,
             repo,
-            pat,
             request.getAlertNumber(),
-            request.getFindingState(),
-            request.getId(),
-            tenantId
+            request.getFindingState()
         );
+        StateUpdateJobEvent event = new StateUpdateJobEvent(payload);
+        // 4) Call the appropriate service
+        producer.produce(event);
+        // service.updateFinding(
+        //     owner,
+        //     repo,
+        //     pat,
+        //     request.getAlertNumber(),
+        //     request.getFindingState(),
+        //     request.getId(),
+        //     tenantId
+        // );
 
         // 5) Return standard success response
         return new ResponseEntity<>(
