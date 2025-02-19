@@ -1,10 +1,11 @@
 package com.capstone.authServer.controller;
 
-import com.capstone.authServer.dto.event.ScanRequestJobEvent;
-import com.capstone.authServer.dto.event.payload.ScanRequestJobEventPayload;
+import com.capstone.authServer.dto.event.ScanRequestEvent;
+import com.capstone.authServer.dto.event.payload.ScanRequestEventPayload;
 import com.capstone.authServer.dto.scan.request.ScanRequestDTO;
 import com.capstone.authServer.dto.response.ApiResponse;
-import com.capstone.authServer.kafka.producer.ScanRequestJobEventProducer;
+import com.capstone.authServer.kafka.producer.ScanRequestEventProducer;
+import com.capstone.authServer.model.KafkaTopic;
 import com.capstone.authServer.model.Tenant;
 import com.capstone.authServer.model.Tool;
 import com.capstone.authServer.repository.TenantRepository;
@@ -26,10 +27,10 @@ import javax.validation.Valid;
 @CrossOrigin
 public class ScanController {
 
-    private final ScanRequestJobEventProducer producer;
+    private final ScanRequestEventProducer producer;
     private final TenantRepository tenantRepository;
 
-    public ScanController(ScanRequestJobEventProducer producer,
+    public ScanController(ScanRequestEventProducer producer,
                           TenantRepository tenantRepository) {
         this.producer = producer;
         this.tenantRepository = tenantRepository;
@@ -54,14 +55,15 @@ public class ScanController {
         }
 
         for (Tool tool : toolsToBeScanned) {
-            ScanRequestJobEventPayload payload = new ScanRequestJobEventPayload(
+            ScanRequestEventPayload payload = new ScanRequestEventPayload(
                 tool,
                 tenantId,
                 tenant.getOwner(),
-                tenant.getRepo()
+                tenant.getRepo(),
+                KafkaTopic.TOOLSCHEDULER_JFC
             );
-            ScanRequestJobEvent event = new ScanRequestJobEvent(payload);
-            System.out.println("ScanRequestJobEvent produced at controller: " + event.toString());
+            ScanRequestEvent event = new ScanRequestEvent(payload);
+            System.out.println("ScanRequestEvent produced at controller: " + event.toString());
             producer.produce(event);
         }
         

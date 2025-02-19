@@ -2,25 +2,22 @@ package com.capstone.authServer.dto.event;
 
 import java.util.UUID;
 
-import com.capstone.authServer.dto.event.payload.StateUpdateJobEventPayload;
+import com.capstone.authServer.dto.event.payload.ScanParseEventPayload;
 import com.capstone.authServer.model.EventType;
 
-public final class StateUpdateJobEvent implements Event<StateUpdateJobEventPayload> {
-    private StateUpdateJobEventPayload payload;
+public class ScanParseEvent implements Event<ScanParseEventPayload>{
+    private ScanParseEventPayload payload;
     private String eventId;
-    private EventType type = EventType.STATE_UPDATE_JOB;
+    private EventType type = EventType.SCAN_PARSE;
 
-
-    public StateUpdateJobEvent(StateUpdateJobEventPayload payload) {
+    public ScanParseEvent(ScanParseEventPayload payload) {
         this.eventId = UUID.randomUUID().toString();
         this.payload = payload;
     }
 
-    
-    public StateUpdateJobEvent() {
+    public ScanParseEvent() {
         this.eventId = UUID.randomUUID().toString();
     }
-
 
     @Override
     public EventType getType() {
@@ -28,7 +25,7 @@ public final class StateUpdateJobEvent implements Event<StateUpdateJobEventPaylo
     }
 
     @Override
-    public StateUpdateJobEventPayload getPayload() {
+    public ScanParseEventPayload getPayload() {
         return payload;
     }
 

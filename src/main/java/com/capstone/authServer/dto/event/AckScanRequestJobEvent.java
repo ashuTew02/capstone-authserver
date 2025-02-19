@@ -10,7 +10,6 @@ public class AckScanRequestJobEvent implements Event<AckJobEventPayload>{
     private String eventId;
     private EventType type = EventType.ACK_SCAN_REQUEST_JOB;
 
-
     public AckScanRequestJobEvent(AckJobEventPayload payload) {
         this.eventId = UUID.randomUUID().toString();
         this.payload = payload;

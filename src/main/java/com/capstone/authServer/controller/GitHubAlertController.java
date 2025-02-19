@@ -1,11 +1,12 @@
 package com.capstone.authServer.controller;
 
 import com.capstone.authServer.dto.UpdateAlertRequest;
-import com.capstone.authServer.dto.event.StateUpdateJobEvent;
-import com.capstone.authServer.dto.event.payload.StateUpdateJobEventPayload;
+import com.capstone.authServer.dto.event.StateUpdateEvent;
+import com.capstone.authServer.dto.event.payload.StateUpdateEventPayload;
 import com.capstone.authServer.dto.response.ApiResponse;
-import com.capstone.authServer.kafka.producer.StateUpdateJobEventProducer;
+import com.capstone.authServer.kafka.producer.StateUpdateEventProducer;
 import com.capstone.authServer.model.Tool;
+import com.capstone.authServer.model.KafkaTopic;
 import com.capstone.authServer.model.Tenant;
 import com.capstone.authServer.repository.TenantRepository;
 import com.capstone.authServer.security.annotation.AllowedRoles;
@@ -28,12 +29,12 @@ public class GitHubAlertController {
 
     private final Map<Tool, GitHubFindingUpdateService> serviceByTool;
     private final TenantRepository tenantRepository;
-    private final StateUpdateJobEventProducer producer;
+    private final StateUpdateEventProducer producer;
 
     public GitHubAlertController(
             List<GitHubFindingUpdateService> services,
             TenantRepository tenantRepository,
-            StateUpdateJobEventProducer producer
+            StateUpdateEventProducer producer
     ) {
         // Build a map { CODE_SCAN -> codeScanService, DEPENDABOT -> depService, etc. }
         this.serviceByTool = services.stream()
@@ -65,27 +66,20 @@ public class GitHubAlertController {
         String repo = tenant.getRepo();
         // String pat  = tenant.getPat();  // personal access token
         Tool tool = request.getTool();
-        StateUpdateJobEventPayload payload = new StateUpdateJobEventPayload(
+        StateUpdateEventPayload payload = new StateUpdateEventPayload(
             esFindingId,
             tenantId,
             tool,
             owner,
             repo,
             request.getAlertNumber(),
-            request.getFindingState()
+            "github",
+            request.getFindingState(),
+            KafkaTopic.BGJOBS_JFC
         );
-        StateUpdateJobEvent event = new StateUpdateJobEvent(payload);
+        StateUpdateEvent event = new StateUpdateEvent(payload);
         // 4) Call the appropriate service
         producer.produce(event);
-        // service.updateFinding(
-        //     owner,
-        //     repo,
-        //     pat,
-        //     request.getAlertNumber(),
-        //     request.getFindingState(),
-        //     request.getId(),
-        //     tenantId
-        // );
 
         // 5) Return standard success response
         return new ResponseEntity<>(

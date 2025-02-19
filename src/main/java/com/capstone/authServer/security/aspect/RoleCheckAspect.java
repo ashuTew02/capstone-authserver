@@ -25,8 +25,6 @@ public class RoleCheckAspect {
     public Object checkRoles(ProceedingJoinPoint pjp, AllowedRoles allowedRoles) throws Throwable {
 
         final Logger logger = LoggerFactory.getLogger(RoleCheckAspect.class);
-        logger.info("INSIDE THE ROLE CHECK ASPECT");
-        logger.info("ALLOWED ROLES: " + allowedRoles);
         // If no annotation is present or no roles specified, proceed normally
         if (allowedRoles == null || allowedRoles.value().length == 0) {
             return pjp.proceed();
@@ -54,9 +52,6 @@ public class RoleCheckAspect {
                     return authority;
                 })
                 .collect(Collectors.toList());
-
-        logger.info("USER ROLES: " + userRoles.toString());
-        logger.info("ALLOWED ROLEs: " + requiredRoles.toString());
 
         // Check if user has at least one required role
         boolean hasRequiredRole = userRoles.stream()

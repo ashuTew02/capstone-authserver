@@ -7,7 +7,6 @@ import com.capstone.authServer.model.Finding;
 import com.capstone.authServer.model.FindingSeverity;
 import com.capstone.authServer.model.FindingState;
 import com.capstone.authServer.model.Tool;
-import com.capstone.authServer.model.Tenant;
 import com.capstone.authServer.security.annotation.AllowedRoles;
 import com.capstone.authServer.service.ElasticSearchService;
 import com.capstone.authServer.utils.FindingToFindingResponseDTO;
