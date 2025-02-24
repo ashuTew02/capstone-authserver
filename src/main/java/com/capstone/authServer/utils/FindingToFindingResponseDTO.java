@@ -25,6 +25,7 @@ public class FindingToFindingResponseDTO {
         dto.setCreatedAt(finding.getCreatedAt());
         dto.setUpdatedAt(finding.getUpdatedAt());
         dto.setToolAdditionalProperties(finding.getToolAdditionalProperties());
+        dto.setTicketId(finding.getTicketId());
         return dto;
     }
 }

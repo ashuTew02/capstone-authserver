@@ -360,4 +360,30 @@ public class ElasticSearchService {
         }
         return indexName;
     }
+
+
+    public void updateFindingTicketId(String id, String ticketId, Long tenantId) {
+        String indexName = getIndexNameForTenant(tenantId);
+    
+        try {
+            // 1) Get the finding in the tenant's index
+            Finding finding = getFindingById(id, tenantId);
+            if (finding == null) {
+                throw new ElasticsearchOperationException("Finding not found with ID: " + id);
+            }
+    
+            // 2) Update
+            finding.setTicketId(ticketId);
+            finding.setUpdatedAt(LocalDateTime.now().toString());
+    
+            // 3) Re-index
+            esClient.index(i -> i
+                .index(indexName)
+                .id(finding.getId())
+                .document(finding)
+            );
+        } catch (Exception e) {
+            throw new ElasticsearchOperationException("Error updating finding's ticketId in Elasticsearch.", e);
+        }
+    }
 }
