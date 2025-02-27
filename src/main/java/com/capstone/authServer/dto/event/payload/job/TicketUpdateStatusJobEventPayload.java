@@ -10,30 +10,33 @@ public class TicketUpdateStatusJobEventPayload {
     Long jobId;
     Tool tool;
     String status;
+    String ticketId;
 
     public TicketUpdateStatusJobEventPayload(String findingId, Long tenantId, KafkaTopic destTopic, Tool tool,
-            String status, Long jobId) {
+            String status, Long jobId, String ticketId) {
         this.findingId = findingId;
         this.tenantId = tenantId;
         this.tool = tool;
         this.status = status;
         this.jobId = jobId;
+        this.ticketId = ticketId;
     }
 
-    public TicketUpdateStatusJobEventPayload(String findingId, Long tenantId, KafkaTopic destTopic, Tool tool, Long jobId) {
+    public TicketUpdateStatusJobEventPayload(String findingId, Long tenantId, KafkaTopic destTopic, Tool tool, Long jobId, String ticketId) {
         this.findingId = findingId;
         this.tenantId = tenantId;
         this.tool = tool;
         this.status = "DONE";
         this.jobId = jobId;
+        this.ticketId = ticketId;
     }
 
-    public TicketUpdateStatusJobEventPayload(TicketUpdateStatusEventPayload payload,  Long jobId) {
+    public TicketUpdateStatusJobEventPayload(TicketUpdateStatusEventPayload payload, Long jobId) {
         this.findingId = payload.getFindingId();
         this.tenantId = payload.getTenantId();
         this.tool = payload.getTool();
         this.status = payload.getStatus();
-        this.status = "DONE";
+        this.ticketId = payload.getTicketId();
         this.jobId = jobId;
     }
 
@@ -43,12 +46,15 @@ public class TicketUpdateStatusJobEventPayload {
     public String getFindingId() {
         return findingId;
     }
+
     public void setFindingId(String findingId) {
         this.findingId = findingId;
     }
+
     public Long getTenantId() {
         return tenantId;
     }
+
     public void setTenantId(Long tenantId) {
         this.tenantId = tenantId;
     }
@@ -56,12 +62,15 @@ public class TicketUpdateStatusJobEventPayload {
     public Tool getTool() {
         return tool;
     }
+
     public void setTool(Tool tool) {
         this.tool = tool;
     }
+
     public String getStatus() {
         return status;
     }
+
     public void setStatus(String status) {
         this.status = status;
     }
@@ -73,5 +82,12 @@ public class TicketUpdateStatusJobEventPayload {
     public void setJobId(Long jobId) {
         this.jobId = jobId;
     }
-    
+
+    public String getTicketId() {
+        return ticketId;
+    }
+
+    public void setTicketId(String ticketId) {
+        this.ticketId = ticketId;
+    }
 }

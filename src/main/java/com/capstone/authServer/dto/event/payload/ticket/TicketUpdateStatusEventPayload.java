@@ -9,22 +9,25 @@ public class TicketUpdateStatusEventPayload {
     KafkaTopic destTopic;
     Tool tool;
     String status;
+    String ticketId;
 
     public TicketUpdateStatusEventPayload(String findingId, Long tenantId, KafkaTopic destTopic, Tool tool,
-            String status) {
+            String status, String ticketId) {
         this.findingId = findingId;
         this.tenantId = tenantId;
         this.destTopic = destTopic;
         this.tool = tool;
         this.status = status;
+        this.ticketId = ticketId;
     }
 
-    public TicketUpdateStatusEventPayload(String findingId, Long tenantId, KafkaTopic destTopic, Tool tool) {
+    public TicketUpdateStatusEventPayload(String findingId, Long tenantId, KafkaTopic destTopic, Tool tool, String ticketId) {
         this.findingId = findingId;
         this.tenantId = tenantId;
         this.destTopic = destTopic;
         this.tool = tool;
         this.status = "DONE";
+        this.ticketId = ticketId;
     }
 
     public TicketUpdateStatusEventPayload() {
@@ -60,5 +63,10 @@ public class TicketUpdateStatusEventPayload {
     public void setStatus(String status) {
         this.status = status;
     }
-    
+    public String getTicketId() {
+        return ticketId;
+    }
+    public void setTicketId(String ticketId) {
+        this.ticketId = ticketId;
+    }
 }
