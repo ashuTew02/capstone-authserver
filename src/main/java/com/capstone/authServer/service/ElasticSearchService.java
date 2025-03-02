@@ -131,7 +131,7 @@ public class ElasticSearchService {
                 return findings.get(0);
             }
         } catch (Exception e) {
-            throw new ElasticsearchOperationException("Can't find the given finding in tenant's index.", e);
+            throw new ElasticsearchOperationException("Finding doesn't exist.", e);
         }
     }
 

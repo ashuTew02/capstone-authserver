@@ -1,19 +1,16 @@
 package com.capstone.authServer.service;
 
 import com.capstone.authServer.dto.TicketDTO;
-import com.capstone.authServer.exception.ElasticsearchOperationException;
 import com.capstone.authServer.model.Tenant;
 import com.capstone.authServer.model.TenantTicket;
 import com.capstone.authServer.repository.TenantRepository;
 import com.capstone.authServer.repository.TenantTicketRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -135,6 +132,7 @@ public class JiraTicketService {
         for (TenantTicket tt : tenantTickets) {
             try {
                 TicketDTO dto = fetchTicketDetails(accountUrl, jiraUsername, apiToken, tt.getTicketId());
+                dto.setEsFindingId(tt.getEsFindingId());
                 if (dto != null) {
                     result.add(dto);
                 }
@@ -190,6 +188,10 @@ public class JiraTicketService {
         String summary              = (String) fields.get("summary");
         String statusName           = (status != null) ? (String) status.get("name") : null;
 
+        Map<String, Object> project = (Map<String, Object>) fields.get("project");
+        String projectKey = (project != null) ? (String) project.get("key") : null;
+
+        String jiraViewUrl = "https://" + accountUrl + "/jira/software/projects/" + projectKey + "/issues/" + jiraKey;
         // Return your custom DTO
         TicketDTO dto = new TicketDTO();
         dto.setTicketId(jiraKey);
@@ -197,6 +199,7 @@ public class JiraTicketService {
         dto.setIssueTypeDescription(issueTypeDescription);
         dto.setSummary(summary);
         dto.setStatusName(statusName);
+        dto.setJiraUrl(jiraViewUrl);
 
         return dto;
     }
@@ -328,4 +331,5 @@ public class JiraTicketService {
     
         return dto;
     }
+
 }

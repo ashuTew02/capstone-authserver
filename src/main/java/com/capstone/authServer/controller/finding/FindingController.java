@@ -87,6 +87,12 @@ public class FindingController {
         Long tenantId = (Long) auth.getDetails(); // we set this in JwtAuthenticationFilter
 
         Finding finding = service.getFindingById(id, tenantId);
+        if (finding == null) {
+            return new ResponseEntity<>(
+                ApiResponse.error(HttpStatus.NOT_FOUND.value(), "Finding not found. Please make sure the Finding ID is correct."),
+                HttpStatus.NOT_FOUND
+            );
+        }
         FindingResponseDTO dto = FindingToFindingResponseDTO.convert(finding);
         return new ResponseEntity<>(
             ApiResponse.success(HttpStatus.OK.value(), "Finding fetched successfully.", dto),

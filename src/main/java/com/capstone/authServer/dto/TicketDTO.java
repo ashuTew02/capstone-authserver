@@ -9,6 +9,7 @@ public class TicketDTO {
 
     // NEW: the ES finding ID associated with this ticket
     private String esFindingId;
+    private String jiraUrl;
 
     public TicketDTO() {}
 
@@ -41,4 +42,7 @@ public class TicketDTO {
 
     public String getEsFindingId() { return esFindingId; }
     public void setEsFindingId(String esFindingId) { this.esFindingId = esFindingId; }
+
+    public String getJiraUrl() { return jiraUrl; }
+    public void setJiraUrl(String jiraUrl) { this.jiraUrl = jiraUrl; }
 }
